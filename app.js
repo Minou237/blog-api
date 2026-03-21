@@ -1,175 +1,50 @@
+const express = require('express');
+const mongoose = require('mongoose');
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
-const express = require('express');
-const app = express();
 
+const app = express();
 app.use(express.json());
 
-let articles = [];
-let id = 1;
+/* ===========================
+    CONNEXION MONGODB
+=========================== */
 
-// 🔹 Validation
-function validateArticle(data) {
-  const { title, content, author, date, category, tags } = data;
+// 👉 LOCAL (si tu testes sur ton PC)
+// mongoose.connect('mongodb://127.0.0.1:27017/blogDB')
 
-  if (!title || !content || !author) {
-    return "Title, content and author are required";
-  }
+// 👉 RENDER (MongoDB Atlas)
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connecté"))
+  .catch(err => console.log(err));
 
-  return null;
-}
+/* ===========================
+    MODELE
+=========================== */
 
-// 🔹 CREATE
-/**
- * @swagger
- * /api/articles:
- *   post:
- *     summary: Créer un article
- *     description: Ajoute un nouvel article
- *     responses:
- *       201:
- *         description: Article créé
- */
-app.post('/api/articles', (req, res) => {
-  const error = validateArticle(req.body);
-  if (error) return res.status(400).json({ error });
-
-  const article = {
-    id: id++,
-    title: req.body.title,
-    content: req.body.content,
-    author: req.body.author,
-    date: req.body.date || new Date(),
-    category: req.body.category || "",
-    tags: req.body.tags || []
-  };
-
-  articles.push(article);
-
-  res.status(201).json(article);
+const articleSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  content: { type: String, required: true },
+  author: { type: String, required: true },
+  date: { type: Date, default: Date.now },
+  category: String,
+  tags: [String]
 });
 
-// 🔹 GET ALL + FILTER
-/**
- * @swagger
- * /api/articles:
- *   get:
- *     summary: Récupérer tous les articles
- *     responses:
- *       200:
- *         description: Liste des articles
- */
-app.get('/api/articles', (req, res) => {
-  let result = articles;
+const Article = mongoose.model('Article', articleSchema);
 
-  const { category, author, date } = req.query;
+/* ===========================
+   SWAGGER
+=========================== */
 
-  if (category) {
-    result = result.filter(a => a.category === category);
-  }
-
-  if (author) {
-    result = result.filter(a => a.author === author);
-  }
-
-  if (date) {
-    result = result.filter(a => a.date.includes(date));
-  }
-
-  res.json(result);
-});
-
-// 🔹 GET ONE
-/**
- * @swagger
- * /api/articles/{id}:
- *   get:
- *     summary: Récupérer un article par ID
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *     responses:
- *       200:
- *         description: Article trouvé
- *       404:
- *         description: Article non trouvé
- */
-app.get('/api/articles/:id', (req, res) => {
-  const article = articles.find(a => a.id == req.params.id);
-
-  if (!article) {
-    return res.status(404).json({ error: "Article not found" });
-  }
-
-  res.json(article);
-});
-
-// 🔹 UPDATE
-/**
- * @swagger
- * /api/articles/{id}:
- *   put:
- *     summary: Modifier un article
- */
-app.put('/api/articles/:id', (req, res) => {
-  const article = articles.find(a => a.id == req.params.id);
-
-  if (!article) {
-    return res.status(404).json({ error: "Article not found" });
-  }
-
-  Object.assign(article, req.body);
-
-  res.json(article);
-});
-
-// 🔹 DELETE
-/**
- * @swagger
- * /api/articles/{id}:
- *   delete:
- *     summary: Supprimer un article
- */
-app.delete('/api/articles/:id', (req, res) => {
-  const index = articles.findIndex(a => a.id == req.params.id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: "Article not found" });
-  }
-
-  articles.splice(index, 1);
-
-  res.json({ message: "Article deleted" });
-});
-
-// 🔹 SEARCH
-/**
- * @swagger
- * /api/articles/search:
- *   get:
- *     summary: Rechercher des articles
- */
-app.get('/api/articles/search', (req, res) => {
-  const q = req.query.query;
-
-  if (!q) {
-    return res.status(400).json({ error: "Query is required" });
-  }
-
-  const result = articles.filter(a =>
-    a.title.includes(q) || a.content.includes(q)
-  );
-
-  res.json(result);
-});
 const options = {
   definition: {
     openapi: "3.0.0",
     info: {
       title: "Blog API",
       version: "1.0.0",
-      description: "API pour gérer les articles",
+      description: "API avec MongoDB"
     },
   },
   apis: ["./app.js"],
@@ -178,8 +53,105 @@ const options = {
 const swaggerSpec = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-const PORT = process.env.port || 3000;
+/* ===========================
+   ROUTES
+=========================== */
+
+/**
+ * @swagger
+ * /api/articles:
+ *   post:
+ *     summary: Créer un article
+ */
+app.post('/api/articles', async (req, res) => {
+  try {
+    const article = new Article(req.body);
+    await article.save();
+    res.status(201).json(article);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/articles:
+ *   get:
+ *     summary: Récupérer tous les articles
+ */
+app.get('/api/articles', async (req, res) => {
+  const articles = await Article.find();
+  res.json(articles);
+});
+
+/**
+ * @swagger
+ * /api/articles/{id}:
+ *   get:
+ *     summary: Récupérer un article
+ */
+app.get('/api/articles/:id', async (req, res) => {
+  const article = await Article.findById(req.params.id);
+
+  if (!article) {
+    return res.status(404).json({ error: "Article non trouvé" });
+  }
+
+  res.json(article);
+});
+
+/**
+ * @swagger
+ * /api/articles/{id}:
+ *   put:
+ *     summary: Modifier un article
+ */
+app.put('/api/articles/:id', async (req, res) => {
+  const article = await Article.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
+
+  res.json(article);
+});
+
+/**
+ * @swagger
+ * /api/articles/{id}:
+ *   delete:
+ *     summary: Supprimer un article
+ */
+app.delete('/api/articles/:id', async (req, res) => {
+  await Article.findByIdAndDelete(req.params.id);
+  res.json({ message: "Article supprimé" });
+});
+
+/**
+ * @swagger
+ * /api/articles/search:
+ *   get:
+ *     summary: Rechercher des articles
+ */
+app.get('/api/articles/search', async (req, res) => {
+  const q = req.query.query;
+
+  const articles = await Article.find({
+    $or: [
+      { title: { $regex: q, $options: 'i' } },
+      { content: { $regex: q, $options: 'i' } }
+    ]
+  });
+
+  res.json(articles);
+});
+
+/* ===========================
+   SERVEUR
+=========================== */
+
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
