@@ -7,12 +7,10 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const app = express();
 app.use(express.json());
 
-/* ===========================
+ ===========================
     CONNEXION MONGODB
-=========================== */
+=========================== 
 
-// 👉 LOCAL (si tu testes sur ton PC)
-// mongoose.connect('mongodb://127.0.0.1:27017/blogDB')
 
 // 👉 RENDER (MongoDB Atlas)
 mongoose.connect("mongodb+srv://admin:liHhwnul8LUTkxdf@cluster0.9jv9bdh.mongodb.net/blogDB?retryWrites=true&w=majority")
@@ -20,9 +18,9 @@ mongoose.connect("mongodb+srv://admin:liHhwnul8LUTkxdf@cluster0.9jv9bdh.mongodb.
   .catch(err => console.log(err));
 
 
-/* ===========================
+===========================
     MODELE
-=========================== */
+=========================== 
 
 const articleSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -35,9 +33,9 @@ const articleSchema = new mongoose.Schema({
 
 const Article = mongoose.model('Article', articleSchema);
 
-/* ===========================
+===========================
    SWAGGER
-=========================== */
+=========================== 
 
 const options = {
   definition: {
@@ -54,9 +52,9 @@ const options = {
 const swaggerSpec = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-/* ===========================
+===========================
    ROUTES
-=========================== */
+=========================== 
 
 /**
  * @swagger
@@ -147,9 +145,9 @@ app.get('/api/articles/search', async (req, res) => {
   res.json(articles);
 });
 
-/* ===========================
+===========================
    SERVEUR
-=========================== */
+=========================== 
 
 const PORT = process.env.PORT || 3000;
 
