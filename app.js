@@ -7,7 +7,7 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const app = express();
 app.use(express.json());
 
-mongoose.connect("process.env.MONGO_URI")
+mongoose.connect("mongodb+srv://admin:JwTQxUgasSptKieL@cluster0.9jv9bdh.mongodb.net/blogDB?retryWrites=true&w=majority")
   .then(() => console.log("MongoDB connecté"))
   .catch(err => console.log(err));
 
