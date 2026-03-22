@@ -15,9 +15,10 @@ app.use(express.json());
 // mongoose.connect('mongodb://127.0.0.1:27017/blogDB')
 
 // 👉 RENDER (MongoDB Atlas)
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect("mongodb+srv://admin:liHhwnul8LUTkxdf@cluster0.9jv9bdh.mongodb.net/blogDB?retryWrites=true&w=majority")
   .then(() => console.log("MongoDB connecté"))
   .catch(err => console.log(err));
+
 
 /* ===========================
     MODELE
@@ -63,34 +64,34 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *   post:
  *     summary: Créer un article
  */
-app.post('/api/articles', async (req, res) => {
+app.post('/articles', async (req, res) => {
   try {
     const article = new Article(req.body);
     await article.save();
     res.status(201).json(article);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
 /**
  * @swagger
- * /api/articles:
+ * /articles:
  *   get:
  *     summary: Récupérer tous les articles
  */
-app.get('/api/articles', async (req, res) => {
-  const articles = await Article.find();
-  res.json(articles);
+app.get('/articles', async (req, res) => {
+     const articles = await Article.find();
+     res.json(articles);
 });
 
 /**
  * @swagger
- * /api/articles/{id}:
+ * /articles/{id}:
  *   get:
  *     summary: Récupérer un article
  */
-app.get('/api/articles/:id', async (req, res) => {
+app.get('articles/:id', async (req, res) => {
   const article = await Article.findById(req.params.id);
 
   if (!article) {
@@ -106,7 +107,7 @@ app.get('/api/articles/:id', async (req, res) => {
  *   put:
  *     summary: Modifier un article
  */
-app.put('/api/articles/:id', async (req, res) => {
+app.put('/articles/:id', async (req, res) => {
   const article = await Article.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -122,7 +123,7 @@ app.put('/api/articles/:id', async (req, res) => {
  *   delete:
  *     summary: Supprimer un article
  */
-app.delete('/api/articles/:id', async (req, res) => {
+app.delete('/articles/:id', async (req, res) => {
   await Article.findByIdAndDelete(req.params.id);
   res.json({ message: "Article supprimé" });
 });
