@@ -13,7 +13,7 @@ app.use(express.json());
 
 
 // 👉 RENDER (MongoDB Atlas)
-mongoose.connect("mongodb+srv://admin:liHhwnul8LUTkxdf@cluster0.9jv9bdh.mongodb.net/blogDB?retryWrites=true&w=majority")
+mongoose.connect("process.env.MONGO_URI")
   .then(() => console.log("MongoDB connecté"))
   .catch(err => console.log(err));
 
@@ -152,5 +152,5 @@ app.get('/api/articles/search', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Server running");
 });
