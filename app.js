@@ -7,20 +7,9 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const app = express();
 app.use(express.json());
 
- ===========================
-    CONNEXION MONGODB
-=========================== 
-
-
-// 👉 RENDER (MongoDB Atlas)
 mongoose.connect("process.env.MONGO_URI")
   .then(() => console.log("MongoDB connecté"))
   .catch(err => console.log(err));
-
-
-===========================
-    MODELE
-=========================== 
 
 const articleSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -33,9 +22,6 @@ const articleSchema = new mongoose.Schema({
 
 const Article = mongoose.model('Article', articleSchema);
 
-===========================
-   SWAGGER
-=========================== 
 
 const options = {
   definition: {
@@ -51,10 +37,6 @@ const options = {
 
 const swaggerSpec = swaggerJsdoc(options);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-===========================
-   ROUTES
-=========================== 
 
 /**
  * @swagger
@@ -144,10 +126,6 @@ app.get('/api/articles/search', async (req, res) => {
 
   res.json(articles);
 });
-
-===========================
-   SERVEUR
-=========================== 
 
 const PORT = process.env.PORT || 3000;
 
